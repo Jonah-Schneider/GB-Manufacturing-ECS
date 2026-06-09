@@ -199,6 +199,9 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# Ignore Python bytecode caches
+__pycache__/
+
 # Ruff stuff:
 .ruff_cache/
 
