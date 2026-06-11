@@ -14,8 +14,9 @@ db_manager = DatabaseManager(DB_PATH)
 ecs = ECSSystem(db_manager)
 
 
-
+# -----------------------------------------------------------------------------
 # AUTHENTICATION
+# -----------------------------------------------------------------------------
 @app.route("/api/login/<int:employee_id>", methods=["GET"])
 def login(employee_id: int) -> Response | tuple[Response, int]:
     """Look up an employee by ID.
