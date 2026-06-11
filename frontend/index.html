@@ -8,16 +8,16 @@
       3. My Checked-Out Equipment
       4. Transaction History
 
-    All interactivity is handled by frontend.js, which is loaded at the
+    All interactivity is handled by script.js, which is loaded at the
     bottom of <body> so the DOM is fully built before the script runs.
 
-    BUTTON ID REFERENCE (must match the IDs wired in frontend.js):
+    BUTTON ID REFERENCE (must match the IDs wired in script.js):
       #login-btn             → calls loginEmployee()
       #view-equipment-btn    → calls loadEquipment()
       #view-my-equipment-btn → calls loadEmployeeEquipment()
       #view-transactions-btn → calls loadTransactions()
 
-    CONTAINER ID REFERENCE (populated dynamically by frontend.js):
+    CONTAINER ID REFERENCE (populated dynamically by script.js):
       #equipment-list     → rows injected by loadEquipment()
       #my-equipment-list  → rows injected by loadEmployeeEquipment()
       #transaction-list   → rows injected by loadTransactions()
@@ -44,7 +44,7 @@
     <!-- ================================================================
          SECTION 1: EMPLOYEE LOGIN
          The employee types their numeric ID into the input field and
-         clicks "Submit ID". frontend.js reads #login-input and calls
+         clicks "Submit ID". script.js reads #login-input and calls
          GET /api/login/<id> to authenticate.
     ================================================================ -->
     <h1>Employee Login</h1>
@@ -53,14 +53,14 @@
         Login input field.
         - type="number" restricts input to numeric values, matching the
           integer employee IDs stored in the database.
-        - id="login-input" is read by loginEmployee() in frontend.js.
+        - id="login-input" is read by loginEmployee() in script.js.
         - placeholder gives the user a hint without requiring a visible label.
     -->
     <input type="number" id="login-input" placeholder="Enter Employee ID">
 
     <!--
         Submit ID button.
-        - id="login-btn" is wired to loginEmployee() in frontend.js.
+        - id="login-btn" is wired to loginEmployee() in script.js.
         - type="button" prevents default form-submit behavior (important
           if this element is ever moved inside a <form> tag).
     -->
@@ -70,22 +70,22 @@
     <!-- ================================================================
          SECTION 2: AVAILABLE EQUIPMENT
          Displays all equipment records returned by GET /api/equipment.
-         Each row includes a "Checkout" button injected by frontend.js.
-         The #equipment-list div starts empty; frontend.js populates it
+         Each row includes a "Checkout" button injected by script.js.
+         The #equipment-list div starts empty; script.js populates it
          when the employee clicks "View Equipment".
     ================================================================ -->
     <h2>Available Equipment</h2>
 
     <!--
         "View Equipment" button.
-        Triggers loadEquipment() in frontend.js, which fetches the full
+        Triggers loadEquipment() in script.js, which fetches the full
         equipment list and renders rows into #equipment-list below.
     -->
     <button type="button" id="view-equipment-btn">View Equipment</button>
 
     <!--
         Target container for the available equipment list.
-        Starts empty. frontend.js clears and repopulates this div each
+        Starts empty. script.js clears and repopulates this div each
         time loadEquipment() is called so the list is always fresh.
     -->
     <div id="equipment-list"></div>
@@ -94,14 +94,14 @@
     <!-- ================================================================
          SECTION 3: MY CHECKED-OUT EQUIPMENT
          Shows only the equipment currently checked out by the logged-in
-         employee. Each row includes a "Return" button injected by frontend.js.
+         employee. Each row includes a "Return" button injected by script.js.
          Populated by GET /api/employee/<id>/equipment.
     ================================================================ -->
     <h2>My Equipment</h2>
 
     <!--
         "View Checked Out Items" button.
-        Triggers loadEmployeeEquipment() in frontend.js. Note: this panel
+        Triggers loadEmployeeEquipment() in script.js. Note: this panel
         is also refreshed automatically after every checkout and return
         action, so the employee's list stays current without manual clicks.
     -->
@@ -109,7 +109,7 @@
 
     <!--
         Target container for the logged-in employee's checked-out items.
-        frontend.js also creates this container as a fallback if it is
+        script.js also creates this container as a fallback if it is
         missing, but declaring it here explicitly is cleaner and more
         predictable.
     -->
@@ -125,14 +125,14 @@
 
     <!--
         "View Transactions" button.
-        Triggers loadTransactions() in frontend.js, which fetches all
+        Triggers loadTransactions() in script.js, which fetches all
         transaction records and renders them into #transaction-list below.
     -->
     <button type="button" id="view-transactions-btn">View Transactions</button>
 
     <!--
         Target container for the transaction history log.
-        Starts empty. frontend.js clears and repopulates this div each
+        Starts empty. script.js clears and repopulates this div each
         time loadTransactions() is called.
     -->
     <div id="transaction-list"></div>
@@ -140,10 +140,10 @@
 
     <!-- ================================================================
          SCRIPT LOAD
-         frontend.js is loaded at the END of <body> so that all elements
+         script.js is loaded at the END of <body> so that all elements
          above already exist in the DOM when the script runs. This avoids
          the need for additional load-event wrappers inside the script
-         (though frontend.js also uses DOMContentLoaded as a safety net).
+         (though script.js also uses DOMContentLoaded as a safety net).
     ================================================================ -->
     <script src="script.js"></script>
 
