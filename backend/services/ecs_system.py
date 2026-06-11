@@ -31,7 +31,7 @@ class ECSSystem:
 
         # Update the equipment status to Checked Out
         self.db_manager.update_equipment_status(equipment_id, "Checked Out")
-
+        return True
     # Used to view what equipment the individual employee has checked out
     def get_employee_equipment(self, employee_id):
         # Get all equipment checked out by this employee
@@ -46,7 +46,7 @@ class ECSSystem:
 
         # Record the return time for the open transaction
         self.db_manager.record_return_time(equipment_id)  # Fixed: was return_equipment
-
+        return True
     def get_transactions(self):
         # Get the full transaction history
         rows = self.db_manager.get_transactions()

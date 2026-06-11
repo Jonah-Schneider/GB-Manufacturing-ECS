@@ -9,6 +9,21 @@
 // - Helper functions (`refreshLists`, `setContainerContent`) reduce repeated logic.
 // - Button wiring uses element IDs instead of positional querySelectorAll to avoid
 //   fragile index-based lookups that break if the HTML button order ever changes.
+//
+// NOTE ON BASE_URL:
+// - Flask runs on port 5000. Live Server runs on port 5500.
+// - Without BASE_URL, fetch() sends requests to Live Server (port 5500) instead
+//   of Flask (port 5000), which causes all API calls to fail.
+// - BASE_URL is defined once here so changing the port only requires one edit.
+
+// ---------------------------------------------------------------------------
+// BASE URL
+// ---------------------------------------------------------------------------
+
+// The address of the Flask backend server.
+// All fetch() calls use this as a prefix so they reach Flask on port 5000
+// instead of being intercepted by Live Server on port 5500.
+const BASE_URL = 'http://127.0.0.1:5000';
 
 // ---------------------------------------------------------------------------
 // SHARED STATE
@@ -85,9 +100,9 @@ async function loginEmployee() {
     }
 
     try {
-        // Send the login request to the backend.
+        // Send the login request to the Flask backend using the absolute BASE_URL.
         // GET /api/login/<id> looks up the employee record by numeric ID.
-        const res = await fetch(`/api/login/${id}`);
+        const res = await fetch(`${BASE_URL}/api/login/${id}`);
 
         // A non-2xx HTTP status (e.g. 404 Not Found) means the ID wasn't found.
         if (!res.ok) {
@@ -132,21 +147,18 @@ async function loginEmployee() {
  */
 async function loadEquipment() {
     // Target the container element where equipment rows will be rendered.
-    // This element must exist in the HTML with id="equipment-list".
     const container = document.getElementById('equipment-list');
 
     try {
-        // Request the full list of equipment records from the server.
-        const res = await fetch('/api/equipment');
+        // Request the full list of available equipment from the Flask backend.
+        const res = await fetch(`${BASE_URL}/api/equipment`);
         const data = await res.json();
 
         // Clear the container before rendering to prevent duplicate rows.
-        // Pass null because we will append child elements ourselves below.
         setContainerContent(container, null);
 
         // Guard against an empty or malformed response body.
         if (!data || !data.equipment || data.equipment.length === 0) {
-            // Show a user-facing message when the list is genuinely empty.
             setContainerContent(container, 'No equipment available');
             return;
         }
@@ -172,8 +184,6 @@ async function loadEquipment() {
             container.appendChild(row);
         });
     } catch (e) {
-        // Log the error for debugging; show a user-facing error in the container
-        // so the user knows the load failed rather than seeing stale or blank content.
         console.error('loadEquipment error:', e);
         setContainerContent(container, 'Error loading equipment — please try again');
     }
@@ -201,7 +211,7 @@ async function checkoutEquipment(equipmentId) {
 
     try {
         // POST /api/checkout expects a JSON body with both IDs.
-        const res = await fetch('/api/checkout', {
+        const res = await fetch(`${BASE_URL}/api/checkout`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             // Serialise the request payload to JSON for the server to parse.
@@ -220,8 +230,7 @@ async function checkoutEquipment(equipmentId) {
             // available list and appears in the employee's personal list.
             refreshLists();
         } else {
-            // The server responded but reported a business-logic failure
-            // (e.g. item already checked out). Show its error message if present.
+            // The server responded but reported a business-logic failure.
             alert(data.error || 'Checkout failed — please try again');
         }
     } catch (e) {
@@ -245,7 +254,7 @@ async function returnEquipment(equipmentId) {
     try {
         // POST /api/return only needs the equipment ID — the server looks up
         // the current checkout record to mark it as returned.
-        const res = await fetch('/api/return', {
+        const res = await fetch(`${BASE_URL}/api/return`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ equipment_id: equipmentId })
@@ -277,21 +286,17 @@ async function returnEquipment(equipmentId) {
  * Fetches the list of equipment currently checked out by the logged-in employee
  * from GET /api/employee/<id>/equipment and renders it into #my-equipment-list.
  * Each row shows item details and a "Return" button that calls returnEquipment().
- *
- * NOTE: The #my-equipment-list container is expected to exist in the HTML.
- * It is created once at DOMContentLoaded (see bottom of file) so this function
- * never needs to create or inject the container itself — it only populates it.
  */
 async function loadEmployeeEquipment() {
     // Do nothing if no employee is logged in — there is no ID to query against.
     if (!currentEmployeeId) return;
 
-    // Locate the pre-existing container created during page initialisation.
+    // Locate the container for this employee's checked-out items.
     const container = document.getElementById('my-equipment-list');
 
     try {
         // Request only the equipment checked out by this specific employee.
-        const res = await fetch(`/api/employee/${currentEmployeeId}/equipment`);
+        const res = await fetch(`${BASE_URL}/api/employee/${currentEmployeeId}/equipment`);
         const data = await res.json();
 
         // Clear the container before rendering the fresh data.
@@ -340,13 +345,11 @@ async function loadTransactions() {
     const container = document.getElementById('transaction-list');
 
     // If the container doesn't exist in the current page layout, exit silently.
-    // This allows the function to be called without crashing on pages that omit
-    // the transaction panel.
     if (!container) return;
 
     try {
-        // Fetch all transaction records from the server.
-        const res = await fetch('/api/transactions');
+        // Fetch all transaction records from the Flask backend.
+        const res = await fetch(`${BASE_URL}/api/transactions`);
         const data = await res.json();
 
         // Clear any previously rendered rows before writing new content.
@@ -362,11 +365,11 @@ async function loadTransactions() {
         data.transactions.forEach(tx => {
             const row = document.createElement('div');
 
-            // Build the display string: transaction ID, employee, equipment, checkout time,
-            // and optionally the return time if the item has been returned.
+            // Build the display string. return_time will be null if the item
+            // has not been returned yet, so we show a friendly message instead.
             const returnInfo = tx.return_time
-                ? ` — returned ${tx.return_time}`  // Item has been returned
-                : ' — not yet returned';            // Item is still checked out
+                ? ` — returned ${tx.return_time}`
+                : ' — not yet returned';
 
             row.textContent =
                 `#${tx.transaction_id}: ` +
@@ -390,50 +393,30 @@ async function loadTransactions() {
 /**
  * DOMContentLoaded handler
  * Runs once the HTML document is fully parsed and all elements exist in the DOM.
- * Responsibilities:
- *   1. Ensure the #my-equipment-list container exists (creates it if absent).
- *   2. Wire all button click events using element IDs rather than positional
- *      querySelectorAll indices, so adding or reordering buttons in the HTML
- *      does not silently break the wiring.
- *
- * Expected HTML button IDs:
- *   - #login-btn              → triggers loginEmployee()
- *   - #view-equipment-btn     → triggers loadEquipment()
- *   - #view-my-equipment-btn  → triggers loadEmployeeEquipment()
- *   - #view-transactions-btn  → triggers loadTransactions()
+ * Wires all button click events using element IDs so adding or reordering
+ * buttons in the HTML does not silently break the wiring.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- Ensure #my-equipment-list container exists ---
-    // The employee equipment panel is populated dynamically after login.
-    // Creating the container here (once, at startup) means loadEmployeeEquipment()
-    // never has to check for or create it on every call.
+    // Ensure the #my-equipment-list container exists. It is declared in the HTML
+    // but this acts as a safety net in case it is ever accidentally removed.
     if (!document.getElementById('my-equipment-list')) {
         const myEquipmentContainer = document.createElement('div');
         myEquipmentContainer.id = 'my-equipment-list';
-        // Append to the end of the body as a sensible default position.
-        // Adjust this insertion point to match your actual HTML layout if needed.
         document.body.appendChild(myEquipmentContainer);
     }
 
-    // --- Wire buttons by ID ---
-    // Each button is looked up by its id attribute. If a button is missing from
-    // the page (e.g. the transaction button on a page that doesn't show history),
-    // the optional-chaining (?.) operator prevents a crash — it simply does nothing.
-
-    // "Submit ID" / Login button
+    // Wire each button to its function using the id attributes defined in index.html.
+    // The optional-chaining operator (?.) prevents a crash if a button is missing.
     document.getElementById('login-btn')
         ?.addEventListener('click', loginEmployee);
 
-    // "View Equipment" button — loads the full available equipment list
     document.getElementById('view-equipment-btn')
         ?.addEventListener('click', loadEquipment);
 
-    // "View My Items" button — loads equipment checked out by the logged-in employee
     document.getElementById('view-my-equipment-btn')
         ?.addEventListener('click', loadEmployeeEquipment);
 
-    // "View Transactions" button — loads the full transaction history log
     document.getElementById('view-transactions-btn')
         ?.addEventListener('click', loadTransactions);
 });
