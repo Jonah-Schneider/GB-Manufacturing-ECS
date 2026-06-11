@@ -1,29 +1,152 @@
-<h1>Employee Login</h1>
+<!DOCTYPE html>
+<!--
+    index.html
+    GB Manufacturing Equipment Checkout System (ECS)
+    Main page — serves all core UI panels:
+      1. Employee Login
+      2. Available Equipment
+      3. My Checked-Out Equipment
+      4. Transaction History
 
-<input>
+    All interactivity is handled by frontend.js, which is loaded at the
+    bottom of <body> so the DOM is fully built before the script runs.
 
-<button type="button">Submit ID</button>
+    BUTTON ID REFERENCE (must match the IDs wired in frontend.js):
+      #login-btn             → calls loginEmployee()
+      #view-equipment-btn    → calls loadEquipment()
+      #view-my-equipment-btn → calls loadEmployeeEquipment()
+      #view-transactions-btn → calls loadTransactions()
+
+    CONTAINER ID REFERENCE (populated dynamically by frontend.js):
+      #equipment-list     → rows injected by loadEquipment()
+      #my-equipment-list  → rows injected by loadEmployeeEquipment()
+      #transaction-list   → rows injected by loadTransactions()
+-->
+<html lang="en">
+
+<head>
+    <!-- Character encoding declaration — ensures special characters render correctly -->
+    <meta charset="UTF-8">
+
+    <!--
+        Viewport meta tag — tells mobile browsers to use the device's actual
+        width instead of assuming a desktop-sized screen. Prevents the page
+        from appearing zoomed out on phones.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Tab/window title shown in the browser -->
+    <title>GB Manufacturing — Equipment Checkout System</title>
+</head>
+
+<body>
+
+    <!-- ================================================================
+         SECTION 1: EMPLOYEE LOGIN
+         The employee types their numeric ID into the input field and
+         clicks "Submit ID". frontend.js reads #login-input and calls
+         GET /api/login/<id> to authenticate.
+    ================================================================ -->
+    <h1>Employee Login</h1>
+
+    <!--
+        Login input field.
+        - type="number" restricts input to numeric values, matching the
+          integer employee IDs stored in the database.
+        - id="login-input" is read by loginEmployee() in frontend.js.
+        - placeholder gives the user a hint without requiring a visible label.
+    -->
+    <input type="number" id="login-input" placeholder="Enter Employee ID">
+
+    <!--
+        Submit ID button.
+        - id="login-btn" is wired to loginEmployee() in frontend.js.
+        - type="button" prevents default form-submit behavior (important
+          if this element is ever moved inside a <form> tag).
+    -->
+    <button type="button" id="login-btn">Submit ID</button>
 
 
-<h2>Available Equipment</h2>
+    <!-- ================================================================
+         SECTION 2: AVAILABLE EQUIPMENT
+         Displays all equipment records returned by GET /api/equipment.
+         Each row includes a "Checkout" button injected by frontend.js.
+         The #equipment-list div starts empty; frontend.js populates it
+         when the employee clicks "View Equipment".
+    ================================================================ -->
+    <h2>Available Equipment</h2>
 
-<div id="equipment-list">
+    <!--
+        "View Equipment" button.
+        Triggers loadEquipment() in frontend.js, which fetches the full
+        equipment list and renders rows into #equipment-list below.
+    -->
+    <button type="button" id="view-equipment-btn">View Equipment</button>
 
-<button type="button">View Equipment</button>
+    <!--
+        Target container for the available equipment list.
+        Starts empty. frontend.js clears and repopulates this div each
+        time loadEquipment() is called so the list is always fresh.
+    -->
+    <div id="equipment-list"></div>
 
 
-<h2>My Equipment</h2>
+    <!-- ================================================================
+         SECTION 3: MY CHECKED-OUT EQUIPMENT
+         Shows only the equipment currently checked out by the logged-in
+         employee. Each row includes a "Return" button injected by frontend.js.
+         Populated by GET /api/employee/<id>/equipment.
+    ================================================================ -->
+    <h2>My Equipment</h2>
 
-<button type="button">View Checked Out Items</button>
+    <!--
+        "View Checked Out Items" button.
+        Triggers loadEmployeeEquipment() in frontend.js. Note: this panel
+        is also refreshed automatically after every checkout and return
+        action, so the employee's list stays current without manual clicks.
+    -->
+    <button type="button" id="view-my-equipment-btn">View Checked Out Items</button>
+
+    <!--
+        Target container for the logged-in employee's checked-out items.
+        frontend.js also creates this container as a fallback if it is
+        missing, but declaring it here explicitly is cleaner and more
+        predictable.
+    -->
+    <div id="my-equipment-list"></div>
 
 
+    <!-- ================================================================
+         SECTION 4: TRANSACTION HISTORY
+         Read-only log of all checkout and return events from the
+         Transactions table. Populated by GET /api/transactions.
+    ================================================================ -->
+    <h2>Transaction History</h2>
 
-<h2>Transaction History</h2>
+    <!--
+        "View Transactions" button.
+        Triggers loadTransactions() in frontend.js, which fetches all
+        transaction records and renders them into #transaction-list below.
+    -->
+    <button type="button" id="view-transactions-btn">View Transactions</button>
 
-<button id="view-transactions-btn">
-    View Transactions
-</button>
+    <!--
+        Target container for the transaction history log.
+        Starts empty. frontend.js clears and repopulates this div each
+        time loadTransactions() is called.
+    -->
+    <div id="transaction-list"></div>
 
-<div id="transaction-list">
 
-</div>
+    <!-- ================================================================
+         SCRIPT LOAD
+         frontend.js is loaded at the END of <body> so that all elements
+         above already exist in the DOM when the script runs. This avoids
+         the need for additional load-event wrappers inside the script
+         (though frontend.js also uses DOMContentLoaded as a safety net).
+    ================================================================ -->
+    <script src="script.js"></script>
+
+</body>
+
+</html>
