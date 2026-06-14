@@ -251,13 +251,23 @@ async function checkoutEquipment(equipmentId) {
  * @param {number} equipmentId - The numeric ID of the equipment item being returned.
  */
 async function returnEquipment(equipmentId) {
-    try {
+    // Prevent return attempts before login — the server would reject them anyway,
+    // but catching it here gives the user a clearer, faster error message.
+    if (!currentEmployeeId) {
+        alert('Please log in before returning equipment');
+        return;
+    }
+        
+     try {
         // POST /api/return only needs the equipment ID — the server looks up
         // the current checkout record to mark it as returned.
         const res = await fetch(`${BASE_URL}/api/return`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ equipment_id: equipmentId })
+            body: JSON.stringify({
+                employee_id: currentEmployeeId,
+                equipment_id: equipmentId 
+            })
         });
 
         // Parse the server's response to determine success or failure.
