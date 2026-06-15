@@ -1,3 +1,7 @@
+# How to run tests:
+pip install pytest
+pytest
+
 # Test Cases
 
 ## Login Test

@@ -1,7 +1,12 @@
 #Need to import models to use as objects for the project otherwise they don't exist to the code.
-from models.employee import Employee
-from models.equipment import Equipment
-from models.transaction import Transaction
+try:
+    from backend.models.employee import Employee
+    from backend.models.equipment import Equipment
+    from backend.models.transaction import Transaction
+except ModuleNotFoundError:
+    from models.employee import Employee
+    from models.equipment import Equipment
+    from models.transaction import Transaction
 
 class ECSSystem:
     def __init__(self, db_manager):
