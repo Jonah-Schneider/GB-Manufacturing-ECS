@@ -1,0 +1,590 @@
+/* ==========================================================================
+   style.css
+   GB Manufacturing — Equipment Checkout System (ECS)
+   
+   PURPOSE:
+   Provides all visual styling for index.html. Organised into clearly labelled
+   sections that mirror the structure of the HTML so it is easy to find the
+   styles that control each part of the page.
+
+   SECTION MAP:
+     1. CSS Custom Properties (design tokens — colors, fonts, spacing)
+     2. CSS Reset & Box Model
+     3. Base Typography
+     4. Page Layout & Body
+     5. Header / Page Title
+     6. Section Panels
+     7. Form Controls (input field)
+     8. Buttons — base styles
+     9. Buttons — variant overrides (Checkout, Return)
+    10. Equipment & Transaction List Rows
+    11. Empty-state & Error Messages
+    12. Responsive Breakpoint (mobile)
+========================================================================== */
+
+
+/* ==========================================================================
+   1. CSS CUSTOM PROPERTIES  (a.k.a. "design tokens")
+   --------------------------------------------------------------------------
+   CSS custom properties (variables) are declared on the :root pseudo-class
+   so they are available to every element on the page.
+
+   WHY USE VARIABLES?
+   If the brand color needs to change, we update it in ONE place here and
+   every element that references it updates automatically. Without variables
+   we would have to hunt through the entire file replacing hex codes.
+
+   NAMING CONVENTION:
+   --ecs-[category]-[variant]
+   Prefixing with "ecs-" avoids collisions with browser built-ins or any
+   third-party library that might be added later.
+========================================================================== */
+:root {
+
+    /* ------------------------------------------------------------------
+       COLOR PALETTE
+       Built around GB Manufacturing's industrial context:
+       - Dark steel blue for primary actions and headings
+       - Amber / safety-orange as the accent (echoes hard-hat / caution tape)
+       - Neutral greys for surfaces and borders
+       - Semantic colours for success / danger feedback
+    ------------------------------------------------------------------ */
+
+    /* Brand primaries */
+    --ecs-color-primary:        #1E3A5F;   /* Deep steel blue — headings, focus rings    */
+    --ecs-color-primary-hover:  #162D4A;   /* Darker shade for button hover states       */
+    --ecs-color-accent:         #E07B00;   /* Amber — Checkout button, highlights        */
+    --ecs-color-accent-hover:   #B86200;   /* Darker amber for Checkout button hover     */
+
+    /* Feedback colours */
+    --ecs-color-success:        #2A7A4B;   /* Green — Return button (item coming back)   */
+    --ecs-color-success-hover:  #1F5E38;   /* Darker green for Return button hover       */
+    --ecs-color-danger:         #C0392B;   /* Red — error messages                       */
+
+    /* Surface & border neutrals */
+    --ecs-color-bg:             #F5F6F8;   /* Page background — light cool grey          */
+    --ecs-color-surface:        #FFFFFF;   /* Card / panel background                    */
+    --ecs-color-border:         #D0D5DD;   /* Dividers and input borders                 */
+    --ecs-color-text:           #1A1A2E;   /* Primary body text — near-black             */
+    --ecs-color-text-muted:     #6B7280;   /* Secondary / helper text                    */
+
+    /* ------------------------------------------------------------------
+       TYPOGRAPHY
+       System font stack: falls back gracefully on every OS without loading
+       a web font, which keeps the page fast and avoids FOUT (flash of
+       unstyled text). -apple-system and BlinkMacSystemFont pick up the
+       native San Francisco font on Apple devices; Segoe UI on Windows;
+       Roboto on Android / Chrome OS.
+    ------------------------------------------------------------------ */
+    --ecs-font-sans:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+
+    /* Type scale — each step is ~1.25× the previous (a "major third" scale) */
+    --ecs-font-size-sm:   0.875rem;   /*  14 px — small labels, muted text   */
+    --ecs-font-size-base: 1rem;       /*  16 px — body text (browser default) */
+    --ecs-font-size-md:   1.125rem;   /*  18 px — section headings           */
+    --ecs-font-size-lg:   1.5rem;     /*  24 px — panel titles (h2)          */
+    --ecs-font-size-xl:   2rem;       /*  32 px — page title (h1)            */
+
+    /* ------------------------------------------------------------------
+       SPACING
+       A consistent spacing scale prevents arbitrary pixel values from
+       appearing all over the file. Everything is a multiple of 4 px.
+    ------------------------------------------------------------------ */
+    --ecs-space-xs:   0.25rem;   /*  4 px */
+    --ecs-space-sm:   0.5rem;    /*  8 px */
+    --ecs-space-md:   1rem;      /* 16 px */
+    --ecs-space-lg:   1.5rem;    /* 24 px */
+    --ecs-space-xl:   2rem;      /* 32 px */
+    --ecs-space-2xl:  3rem;      /* 48 px */
+
+    /* ------------------------------------------------------------------
+       SHAPE
+       Consistent border-radius values keep corners visually harmonious
+       across buttons, inputs, and panels.
+    ------------------------------------------------------------------ */
+    --ecs-radius-sm:  4px;    /* Subtle rounding — inputs, small buttons */
+    --ecs-radius-md:  8px;    /* Panels and cards                        */
+    --ecs-radius-lg: 12px;    /* Large surface containers                */
+
+    /* ------------------------------------------------------------------
+       SHADOWS
+       Box shadows give panels a gentle lift off the background.
+       Two levels: default (resting) and hover/raised.
+    ------------------------------------------------------------------ */
+    --ecs-shadow-sm:
+        0 1px 3px rgba(0, 0, 0, 0.08),
+        0 1px 2px rgba(0, 0, 0, 0.06);
+
+    --ecs-shadow-md:
+        0 4px 12px rgba(0, 0, 0, 0.10),
+        0 2px  4px rgba(0, 0, 0, 0.06);
+
+    /* ------------------------------------------------------------------
+       TRANSITIONS
+       A shared duration and easing curve makes all interactive elements
+       feel consistent. "ease-out" feels snappier than the default "ease"
+       because it starts fast and decelerates — good for hover states.
+    ------------------------------------------------------------------ */
+    --ecs-transition: 180ms ease-out;
+}
+
+
+/* ==========================================================================
+   2. CSS RESET & BOX MODEL
+   --------------------------------------------------------------------------
+   Browsers apply their own default margin, padding, and sizing rules, which
+   differ between Chrome, Firefox, and Safari. A minimal reset levels the
+   playing field.
+
+   box-sizing: border-box
+   By default CSS uses "content-box" sizing: width/height do NOT include
+   padding or border. That makes layouts hard to reason about.
+   border-box includes padding and border IN the declared width/height,
+   so a 300 px wide element stays 300 px even when you add padding.
+
+   The * (universal) selector applies the rule to every element.
+   The ::before and ::after pseudo-elements also need it because they
+   can have borders and padding too.
+========================================================================== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;   /* Sane sizing model for all elements  */
+    margin:  0;               /* Remove browser default margins       */
+    padding: 0;               /* Remove browser default padding       */
+}
+
+
+/* ==========================================================================
+   3. BASE TYPOGRAPHY
+   --------------------------------------------------------------------------
+   Applied to <html> and <body> so that font settings cascade down to every
+   element that does not override them.
+
+   rem units are relative to the <html> font-size (usually 16 px).
+   Using rem instead of px respects users who increase their browser's
+   default font size for accessibility.
+========================================================================== */
+html {
+    /* Setting font-size here defines the rem baseline.
+       62.5% → 10 px, which makes rem arithmetic easy (1.6rem = 16 px).
+       We do NOT use this trick here — we keep the default 16 px baseline
+       so our rem values match browser accessibility settings exactly. */
+    font-size: 16px;
+    scroll-behavior: smooth;   /* Animates anchor-link jumps instead of snapping */
+}
+
+body {
+    font-family:    var(--ecs-font-sans);
+    font-size:      var(--ecs-font-size-base);
+    line-height:    1.6;                         /* 1.6× font-size ≈ 25.6 px — comfortable reading */
+    color:          var(--ecs-color-text);
+    background:     var(--ecs-color-bg);
+
+    /* min-height: 100vh ensures the background fills the viewport even on
+       short pages that do not have enough content to reach the bottom. */
+    min-height: 100vh;
+}
+
+
+/* ==========================================================================
+   4. PAGE LAYOUT & BODY WRAPPER
+   --------------------------------------------------------------------------
+   We wrap the entire page content in a centred column so that on wide
+   screens the text does not stretch to an uncomfortable line length.
+   (Long lines are harder to read; 65–75 characters per line is ideal.)
+
+   Because index.html does not have a wrapper <div>, we style <body> itself
+   as the constrained column using max-width + margin: auto.
+========================================================================== */
+body {
+    /* max-width keeps the content readable on wide monitors */
+    max-width:  780px;
+
+    /* auto left/right margins centre the column inside the viewport */
+    margin-left:  auto;
+    margin-right: auto;
+
+    /* Horizontal padding prevents content from touching the screen edges
+       on small viewports where max-width hasn't kicked in yet. */
+    padding: var(--ecs-space-xl) var(--ecs-space-lg);
+}
+
+
+/* ==========================================================================
+   5. HEADER / PAGE TITLE  (h1)
+   --------------------------------------------------------------------------
+   <h1> is the single most important heading on the page and appears only
+   once. We style it to be visually dominant and set the industrial tone.
+========================================================================== */
+h1 {
+    font-size:      var(--ecs-font-size-xl);
+    font-weight:    700;
+    color:          var(--ecs-color-primary);
+    letter-spacing: -0.5px;   /* Tighten tracking at large sizes — looks less "web-default" */
+    margin-bottom:  var(--ecs-space-lg);
+
+    /* A left border stripe echoes a hard-hat or safety-tape visual motif
+       relevant to a manufacturing environment, and gives the title a
+       strong anchor point on the left edge. */
+    padding-left:   var(--ecs-space-md);
+    border-left:    4px solid var(--ecs-color-accent);
+}
+
+
+/* ==========================================================================
+   6. SECTION PANELS  (h2 + content area)
+   --------------------------------------------------------------------------
+   Each logical section (Available Equipment, My Equipment, Transactions) is
+   introduced by an <h2>. We give h2 a divider above it so the sections feel
+   like distinct cards/panels even without extra wrapper elements.
+========================================================================== */
+h2 {
+    font-size:      var(--ecs-font-size-lg);
+    font-weight:    600;
+    color:          var(--ecs-color-primary);
+    margin-top:     var(--ecs-space-2xl);    /* Generous gap above each section  */
+    margin-bottom:  var(--ecs-space-md);
+
+    /* Subtle top border visually separates sections from each other */
+    padding-top:    var(--ecs-space-lg);
+    border-top:     2px solid var(--ecs-color-border);
+}
+
+/* The first h2 on the page does NOT need a top border — the h1 above it
+   already acts as a visual break. :first-of-type targets only the first h2. */
+h2:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+/* Equipment and transaction list containers
+   ----------
+   #equipment-list, #my-equipment-list, and #transaction-list are the <div>s
+   that script.js populates with rows. Giving them a card-style surface makes
+   the dynamic content appear inside a clearly bounded region. */
+#equipment-list,
+#my-equipment-list,
+#transaction-list {
+    background:    var(--ecs-color-surface);
+    border:        1px solid var(--ecs-color-border);
+    border-radius: var(--ecs-radius-md);
+    box-shadow:    var(--ecs-shadow-sm);
+
+    /* min-height reserves space so the container does not collapse to zero
+       height while content is loading, which would cause layout shift. */
+    min-height:    48px;
+
+    margin-top:    var(--ecs-space-md);
+    padding:       var(--ecs-space-sm) 0;   /* Vertical breathing room; rows add their own horizontal padding */
+
+    /* overflow: hidden clips child elements to the rounded corners.
+       Without this, row backgrounds bleed outside the border-radius. */
+    overflow: hidden;
+}
+
+
+/* ==========================================================================
+   7. FORM CONTROLS — INPUT FIELD
+   --------------------------------------------------------------------------
+   The only <input> on the page is the employee ID field. Styling it to match
+   the button heights and border styles makes the login row look intentional
+   rather than like a browser default.
+========================================================================== */
+input[type="number"] {
+    font-family:    var(--ecs-font-sans);       /* Inputs don't inherit font by default in some browsers */
+    font-size:      var(--ecs-font-size-base);
+    color:          var(--ecs-color-text);
+    background:     var(--ecs-color-surface);
+
+    height:         2.5rem;                     /* 40 px — matches button height for alignment          */
+    padding:        0 var(--ecs-space-md);
+    border:         1px solid var(--ecs-color-border);
+    border-radius:  var(--ecs-radius-sm);
+    outline:        none;                       /* Remove browser default outline; we define our own below */
+
+    /* Width is fixed here — adjust if you need the field to grow/shrink */
+    width: 180px;
+
+    /* Smooth border-color transition for the focus effect below */
+    transition: border-color var(--ecs-transition),
+                box-shadow   var(--ecs-transition);
+}
+
+/* Focus state: show a clearly visible ring so keyboard users know where they are.
+   Using box-shadow instead of outline gives a softened, branded appearance
+   while remaining fully accessible. */
+input[type="number"]:focus {
+    border-color: var(--ecs-color-primary);
+    box-shadow:   0 0 0 3px rgba(30, 58, 95, 0.18);   /* Translucent primary-colour glow */
+}
+
+/* Hide the browser's built-in spin arrows on number inputs.
+   The arrows are unnecessary here since employees enter IDs by typing. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;   /* Firefox equivalent of the above */
+}
+
+
+/* ==========================================================================
+   8. BUTTONS — BASE STYLES
+   --------------------------------------------------------------------------
+   All <button> elements on the page share these base styles. Specific
+   buttons get ADDITIONAL rules in section 9.
+
+   We reset the browser's default button appearance first, then build up
+   a consistent style from scratch.
+========================================================================== */
+button {
+    /* Typography */
+    font-family:    var(--ecs-font-sans);
+    font-size:      var(--ecs-font-size-sm);
+    font-weight:    600;
+    letter-spacing: 0.3px;
+
+    /* Sizing & spacing */
+    height:         2.5rem;          /* 40 px — same as input for row alignment */
+    padding:        0 var(--ecs-space-md);
+    white-space:    nowrap;          /* Prevent label from wrapping onto two lines */
+
+    /* Shape */
+    border:         none;            /* Remove browser default border */
+    border-radius:  var(--ecs-radius-sm);
+    cursor:         pointer;         /* Show hand cursor so users know it is clickable */
+
+    /* Default colours (used by the section-header "View …" buttons) */
+    background:     var(--ecs-color-primary);
+    color:          #FFFFFF;
+
+    /* Smooth background-color transition on hover/focus */
+    transition: background var(--ecs-transition),
+                box-shadow  var(--ecs-transition),
+                transform   var(--ecs-transition);
+}
+
+/* Base hover: darken the background and lift the button slightly */
+button:hover {
+    background: var(--ecs-color-primary-hover);
+    box-shadow: var(--ecs-shadow-sm);
+    transform:  translateY(-1px);   /* 1 px upward nudge gives a tactile "lift" feeling */
+}
+
+/* Base focus: same visible ring as the input, keyed to the primary colour.
+   :focus-visible only applies when navigating with keyboard — it does NOT
+   show on mouse click, which avoids a distracting ring for mouse users. */
+button:focus-visible {
+    outline:     none;
+    box-shadow:  0 0 0 3px rgba(30, 58, 95, 0.25);
+}
+
+/* Active (pressed) state: push the button back down to give tactile feedback */
+button:active {
+    transform:  translateY(0);
+    box-shadow: none;
+}
+
+/* Disabled state: dim the button and remove the pointer cursor so users
+   know it cannot be interacted with. */
+button:disabled {
+    opacity:    0.45;
+    cursor:     not-allowed;
+    transform:  none;
+    box-shadow: none;
+}
+
+
+/* ==========================================================================
+   9. BUTTONS — VARIANT OVERRIDES
+   --------------------------------------------------------------------------
+   "Checkout" and "Return" buttons are injected by script.js as plain
+   <button> elements without classes. We target them by their text content
+   using the :contains() approach — but since CSS has no :contains(),
+   we instead rely on the context they appear in.
+
+   APPROACH:
+   All buttons INSIDE #equipment-list are Checkout buttons (amber).
+   All buttons INSIDE #my-equipment-list are Return buttons (green).
+   Section-header buttons (View Equipment etc.) remain the default primary blue.
+========================================================================== */
+
+/* CHECKOUT buttons — amber / safety-orange to signal an outgoing action */
+#equipment-list button {
+    background:   var(--ecs-color-accent);
+    color:        #FFFFFF;
+    margin-left:  var(--ecs-space-sm);   /* Small gap between the text label and the button */
+}
+
+#equipment-list button:hover {
+    background: var(--ecs-color-accent-hover);
+}
+
+#equipment-list button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(224, 123, 0, 0.30);   /* Amber-tinted focus ring */
+}
+
+/* RETURN buttons — green to signal equipment coming back */
+#my-equipment-list button {
+    background:   var(--ecs-color-success);
+    color:        #FFFFFF;
+    margin-left:  var(--ecs-space-sm);
+}
+
+#my-equipment-list button:hover {
+    background: var(--ecs-color-success-hover);
+}
+
+#my-equipment-list button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(42, 122, 75, 0.30);   /* Green-tinted focus ring */
+}
+
+
+/* ==========================================================================
+   10. EQUIPMENT & TRANSACTION LIST ROWS
+   --------------------------------------------------------------------------
+   Each row is a <div> injected by script.js. Because we cannot add classes
+   in script.js (the requirement is to keep script.js unchanged), we target
+   <div> children of the list containers directly.
+
+   display: flex places the text label and button side-by-side on the same
+   line, with the button pushed to the right by margin-left: auto on the
+   button (handled above) or by justify-content here.
+========================================================================== */
+#equipment-list > div,
+#my-equipment-list > div,
+#transaction-list > div {
+    display:         flex;
+    align-items:     center;          /* Vertically centre text and button */
+    justify-content: space-between;   /* Text left, button right */
+
+    padding:         var(--ecs-space-sm) var(--ecs-space-md);
+
+    /* Hairline border separates rows without being heavy */
+    border-bottom:   1px solid var(--ecs-color-border);
+
+    font-size:       var(--ecs-font-size-base);
+
+    /* Subtle hover highlight helps users track which row their eye is on */
+    transition: background var(--ecs-transition);
+}
+
+#equipment-list > div:hover,
+#my-equipment-list > div:hover,
+#transaction-list > div:hover {
+    background: rgba(30, 58, 95, 0.04);   /* Very faint primary-blue tint */
+}
+
+/* Remove the bottom border from the last row so it doesn't double up with
+   the container's own bottom border. */
+#equipment-list > div:last-child,
+#my-equipment-list > div:last-child,
+#transaction-list > div:last-child {
+    border-bottom: none;
+}
+
+/* Transaction rows contain only text (no button), so we do not need
+   justify-content: space-between — override to flex-start. */
+#transaction-list > div {
+    justify-content: flex-start;
+    font-size:       var(--ecs-font-size-sm);
+    color:           var(--ecs-color-text-muted);
+    font-family:     "Courier New", Courier, monospace;   /* Mono font suits a log / audit trail */
+    line-height:     1.5;
+}
+
+
+/* ==========================================================================
+   11. EMPTY-STATE & ERROR MESSAGES
+   --------------------------------------------------------------------------
+   When a list has no data, script.js sets the container's textContent to a
+   plain string (e.g. "No equipment available"). We target the containers
+   in a state where they have text but NO child <div> elements.
+
+   CSS cannot directly detect "has text but no children", so instead we
+   style the containers themselves when they carry inline text — the text
+   is the only content, so padding and centred alignment on the container
+   is all we need.
+========================================================================== */
+
+/* When the container holds only plain text (empty state or error),
+   centre it and style it as muted helper text. */
+#equipment-list:empty::after,
+#my-equipment-list:empty::after,
+#transaction-list:empty::after {
+    /* ::after inserts a CSS-generated content node INSIDE the container
+       when it is completely empty (before script.js writes anything).
+       This gives us a "loading" placeholder at zero JS cost. */
+    content:     "Loading…";
+    display:     block;
+    padding:     var(--ecs-space-md);
+    color:       var(--ecs-color-text-muted);
+    font-size:   var(--ecs-font-size-sm);
+    font-style:  italic;
+    text-align:  center;
+}
+
+
+/* ==========================================================================
+   12. RESPONSIVE BREAKPOINT — MOBILE  (≤ 480 px)
+   --------------------------------------------------------------------------
+   On small screens:
+   - The body padding is reduced so content doesn't feel cramped.
+   - The login row (input + button side-by-side) stacks vertically.
+   - The input stretches to full width for easier thumb typing.
+   - Row buttons stack below their label text.
+
+   @media queries apply styles ONLY when the condition (max-width: 480px)
+   is true, i.e. the viewport is 480 px wide or narrower.
+========================================================================== */
+@media (max-width: 480px) {
+
+    /* Reduce outer padding on small screens */
+    body {
+        padding: var(--ecs-space-md);
+    }
+
+    /* Shrink the page title slightly so it fits on one line */
+    h1 {
+        font-size: var(--ecs-font-size-lg);
+    }
+
+    /* Stack input and button vertically on the login row */
+    input[type="number"] {
+        width:        100%;           /* Full width for easy thumb typing  */
+        margin-bottom: var(--ecs-space-sm);
+    }
+
+    /* Make all top-level buttons full-width on mobile */
+    body > button,
+    h1 + button,
+    h2 + button {
+        width:         100%;
+        margin-bottom: var(--ecs-space-sm);
+    }
+
+    /* Stack the text and action button inside each row */
+    #equipment-list > div,
+    #my-equipment-list > div {
+        flex-direction: column;
+        align-items:    flex-start;
+        gap:            var(--ecs-space-xs);
+    }
+
+    /* On mobile the row button no longer needs a left margin */
+    #equipment-list button,
+    #my-equipment-list button {
+        margin-left: 0;
+        width:       100%;
+    }
+}
+
+
+/* ==========================================================================
+   END OF STYLE.CSS
+========================================================================== */
