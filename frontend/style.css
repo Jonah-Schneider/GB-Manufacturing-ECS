@@ -330,6 +330,8 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 input[type="number"] {
     -moz-appearance: textfield;   /* Firefox equivalent of the above */
+
+    appearance: textfield;       /* Standardized property -  required alongside the prefixed version for future-proofing */
 }
 
 
