@@ -81,10 +81,28 @@ function setContainerContent(container, message = null) {
  * loginEmployee
  * Reads the employee ID from the login input field, calls GET /api/login/<id>,
  * and on success stores the returned employee ID in `currentEmployeeId`.
- * Displays a welcome alert and immediately loads the employee's checked-out items
- * so the UI is populated right after login.
+ * Saves the session to sessionStorage so the user stays logged in through
+ * page interactions. Displays a welcome alert and immediately loads the
+ * employee's checked-out items so the UI is populated right after login.
  */
 async function loginEmployee() {
+    //Check if someone is already logged in before logging them out
+    if (currentEmployeeId) {
+        const savedName = sessionStorage.getItem('employeeName');
+        const confirm = window.confirm(
+            `You are already logged in as ${savedName}. ` +
+            `Do you want to log out and switch accounts?`
+        );
+
+        // If they click Cancel, stop here and keep the current session.
+        if (!confirm) return;
+
+        // If they click OK, log out the current user first before proceeding.
+        logout();
+    }
+    
+    
+    
     // Grab the login input field — expected to have id="login-input" in the HTML
     const input = document.getElementById('login-input');
 
@@ -119,6 +137,14 @@ async function loginEmployee() {
             // backend normalises or reassigns IDs (e.g. trims leading zeros).
             currentEmployeeId = data.employee.employee_id || id;
 
+            // Save the login to sessionStorage so it survives page interactions
+            // without requiring the user to log in again after each action.
+            sessionStorage.setItem('employeeId', currentEmployeeId);
+            sessionStorage.setItem('employeeName', data.employee.full_name);
+
+            // Show the logout button now that someone is logged in.
+            document.getElementById('logout-btn').style.display = 'inline';
+
             // Greet the employee by name using the full_name field from the response.
             alert(`Welcome, ${data.employee.full_name || 'Employee'}!`);
 
@@ -132,6 +158,33 @@ async function loginEmployee() {
         console.error('loginEmployee error:', e);
         alert('Network error — please try again');
     }
+}
+
+/**
+ * logout
+ * Clears the current session from both sessionStorage and the in-memory
+ * state variable, resets the UI panels, and hides the logout button.
+ * The user must log in again to perform any further actions.
+ */
+function logout() {
+    // Clear the saved session data from sessionStorage
+    sessionStorage.clear();
+
+    // Reset the shared state variable so all action guards trigger correctly
+    currentEmployeeId = null;
+
+    // Clear the login input field so it is ready for the next user
+    document.getElementById('login-input').value = '';
+
+    // Hide the logout button — it will reappear on the next successful login
+    document.getElementById('logout-btn').style.display = 'none';
+
+    // Clear all panels so the next user does not see the previous user's data
+    document.getElementById('equipment-list').innerHTML = '';
+    document.getElementById('my-equipment-list').innerHTML = '';
+    document.getElementById('transaction-list').innerHTML = '';
+
+    alert('You have been logged out.');
 }
 
 // ---------------------------------------------------------------------------
@@ -257,8 +310,8 @@ async function returnEquipment(equipmentId) {
         alert('Please log in before returning equipment');
         return;
     }
-        
-     try {
+
+    try {
         // POST /api/return only needs the equipment ID — the server looks up
         // the current checkout record to mark it as returned.
         const res = await fetch(`${BASE_URL}/api/return`, {
@@ -266,7 +319,7 @@ async function returnEquipment(equipmentId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 employee_id: currentEmployeeId,
-                equipment_id: equipmentId 
+                equipment_id: equipmentId
             })
         });
 
@@ -397,14 +450,17 @@ async function loadTransactions() {
 }
 
 // ---------------------------------------------------------------------------
-// PAGE INITIALISATION
+// PAGE INITIALISATION — single DOMContentLoaded block
 // ---------------------------------------------------------------------------
 
 /**
  * DOMContentLoaded handler
- * Runs once the HTML document is fully parsed and all elements exist in the DOM.
- * Wires all button click events using element IDs so adding or reordering
- * buttons in the HTML does not silently break the wiring.
+ * Runs once when the page finishes loading. Handles two jobs in one place:
+ * 1. Restores a previous session from sessionStorage if one exists, so the
+ *    user stays logged in through page interactions without re-entering their ID.
+ * 2. Wires all button click events so user interactions call the right functions.
+ * Keeping both jobs in a single block prevents buttons from being wired twice,
+ * which was causing the welcome back alert to fire on every action.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -416,10 +472,37 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(myEquipmentContainer);
     }
 
-    // Wire each button to its function using the id attributes defined in index.html.
-    // The optional-chaining operator (?.) prevents a crash if a button is missing.
+    // ── SESSION RESTORE ──────────────────────────────────────────────────────
+    // Check sessionStorage for a previously saved login. If found, restore the
+    // session silently — no alert, just populate the state and show the logout
+    // button so the user can see they are still logged in.
+    const savedId = sessionStorage.getItem('employeeId');
+    const savedName = sessionStorage.getItem('employeeName');
+
+    if (savedId) {
+        // Restore the in-memory state variable from the saved session.
+        currentEmployeeId = parseInt(savedId, 10);
+
+        // Fill the login input so the user can see which ID is active.
+        document.getElementById('login-input').value = savedId;
+
+        // Show the logout button — the user is already logged in.
+        document.getElementById('logout-btn').style.display = 'inline';
+
+        // Load the employee's checked-out items silently with no alert,
+        // so the UI is populated without interrupting the user.
+        loadEmployeeEquipment();
+    }
+
+    // ── BUTTON WIRING ────────────────────────────────────────────────────────
+    // Wire each button exactly once using its element ID.
+    // The optional-chaining operator (?.) prevents a crash if a button is
+    // ever accidentally removed from the HTML.
     document.getElementById('login-btn')
         ?.addEventListener('click', loginEmployee);
+
+    document.getElementById('logout-btn')
+        ?.addEventListener('click', logout);
 
     document.getElementById('view-equipment-btn')
         ?.addEventListener('click', loadEquipment);

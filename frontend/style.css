@@ -352,7 +352,7 @@ button {
     letter-spacing: 0.3px;
 
     /* Sizing & spacing */
-    height:         2.5rem;          /* 40 px — same as input for row alignment */
+    height:         2.5rem;          /* 40 px — same as [input] for row alignment */
     padding:        0 var(--ecs-space-md);
     white-space:    nowrap;          /* Prevent label from wrapping onto two lines */
 

@@ -1,9 +1,9 @@
+
 import sqlite3
 import pytest
 
-from backend.services.database_manager import DatabaseManager
-from backend.services.ecs_system import ECSSystem
-
+from services.database_manager import DatabaseManager
+from services.ecs_system import ECSSystem
 
 @pytest.fixture
 def ecs_system(tmp_path):

@@ -88,7 +88,7 @@ class DatabaseManager:
         # JOIN Transactions ON links the Equipment table with a Transactions table to match equipment with user activity.
         # WHERE ... AND filters results to only show items that are currently assigned to the given employee_id AND have a status of 'Checked Out'.
         cursor.execute("""
-            SELECT Equipment.EquipmentID, Equipment.EquipmentName, Equipment.Status
+            SELECT DISTINCT Equipment.EquipmentID, Equipment.EquipmentName, Equipment.Status
             FROM Equipment
             JOIN Transactions ON Equipment.EquipmentID = Transactions.EquipmentID
             WHERE Transactions.EmployeeID = ? AND Equipment.Status = 'Checked Out'
@@ -103,11 +103,12 @@ class DatabaseManager:
         conn = self.connect()
         cursor = conn.cursor()
         return_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        #Does not return a value it instead updates the transaction table and sets the return time based on the current time when the method is called and based on the equipment ID and whether there is no return time already.
         cursor.execute("""
             UPDATE Transactions
             SET ReturnTime = ?
             WHERE EquipmentID = ? AND ReturnTime IS NULL
         """, (return_time, equipment_id))
         conn.commit()
+        rows_updated = cursor.rowcount   # 0 if no open transaction was found
         conn.close()
+        return rows_updated > 0          # True = success, False = nothing updated

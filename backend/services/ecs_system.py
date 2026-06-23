@@ -31,10 +31,14 @@ class ECSSystem:
         return [Equipment(*row) for row in rows]
 
     def checkout_equipment(self, employee_id, equipment_id):
-        # Create a transaction record for the checkout
-        self.db_manager.create_transaction(employee_id, equipment_id)
+    # Guard: verify the item is actually available before allowing checkout.
+    # get_available_equipment() returns only rows with Status = 'Available'.
+        rows = self.db_manager.get_available_equipment()
+        available_ids = [row[0] for row in rows]   # row[0] is EquipmentID
+        if equipment_id not in available_ids:
+            return False   # Flask route sends {"success": false} to the frontend
 
-        # Update the equipment status to Checked Out
+        self.db_manager.create_transaction(employee_id, equipment_id)
         self.db_manager.update_equipment_status(equipment_id, "Checked Out")
         return True
     # Used to view what equipment the individual employee has checked out
@@ -46,11 +50,13 @@ class ECSSystem:
         return [Equipment(*row) for row in rows]
 
     def return_equipment(self, equipment_id):
-        # Update the equipment status back to Available
-        self.db_manager.update_equipment_status(equipment_id, "Available")
+        # Try to record the return time first.
+        # If no open transaction exists, abort — do not change equipment status.
+        updated = self.db_manager.record_return_time(equipment_id)
+        if not updated:
+            return False   # Flask route sends {"success": false} to the frontend
 
-        # Record the return time for the open transaction
-        self.db_manager.record_return_time(equipment_id)  # Fixed: was return_equipment
+        self.db_manager.update_equipment_status(equipment_id, "Available")
         return True
     def get_transactions(self):
         # Get the full transaction history
@@ -58,3 +64,4 @@ class ECSSystem:
 
         # Convert each row into a Transaction object
         return [Transaction(*row) for row in rows]
+    

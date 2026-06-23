@@ -26,7 +26,8 @@ Electronic Checkout System for tracking employee equipment usage.
 - Run Backend servers by doing 'cd backend' and then python app.py (you should see a running server appear make sure it stays open)
 - Open the frontend Right click frontend/index.html in the VS Code file explorer and select Open with Live Server. If you do not have Live Server, install it from the VS Code Extensions tab by searching "Live Server" by Ritwick Dey.
 - Feel free to test the project with Employee ID's: 1001, 1002, 1003, 1004, 1005. 
-- Currently you will have to re-login after every action but the system does work as intended. 
+- There is a newly added logout button and new code that ensures a user stays signed in feel free to test it! 
+
 
 
 

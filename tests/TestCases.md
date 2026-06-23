@@ -1,7 +1,8 @@
 # How to run tests:
 pip install pytest
 pytest
-
+make sure to use cd backend in console
+use command: python -m pytest ../tests/test_ecs.py -v
 # Test Cases
 
 ## Login Test
